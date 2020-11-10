@@ -237,13 +237,6 @@ class allRobHistory extends Component {
         data.forEach((d) => {
           let snapShot = d.data();
 
-          let commlen = snapShot.comments;
-          console.log('a===', commlen);
-
-          let size;
-          if (commlen && commlen.length > 0) {
-            size = commlen.length;
-          }
           let userkey = d.id;
 
           let ProfileURL = snapShot.ProfileURL;
@@ -286,7 +279,7 @@ class allRobHistory extends Component {
             region,
             userkey,
             description,
-            size,
+
             userId,
           };
           infoArray.push(crimeDetail);
@@ -523,48 +516,6 @@ class allRobHistory extends Component {
                         />
                       )}
                     </MapView>
-                  </View>
-                  <View
-                    style={{
-                      padding: 10,
-                      paddingTop: 15,
-                      paddingBottom: 15,
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <TouchableOpacity
-                      style={{ flexDirection: 'row' }}
-                      onPress={() =>
-                        this.props.navigation.navigate('chatScreen', {
-                          chabi: mark.userkey,
-                          userId: mark.userId,
-                        })
-                      }
-                    >
-                      <FontAwesome name='comments' size={15} color='#5d616f' />
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: '#5d616f',
-                          paddingLeft: 4,
-                          fontFamily: 'ralewayRegular',
-                        }}
-                      >
-                        {mark.size > 0 ? mark.size : '0'} Comments
-                      </Text>
-                    </TouchableOpacity>
-                    <View>
-                      <Text
-                        style={{
-                          fontFamily: 'ralewayRegular',
-                          fontSize: 15,
-                          color: '#5d616f',
-                        }}
-                      >
-                        {mark.date}
-                      </Text>
-                    </View>
                   </View>
                 </View>
               ))}
