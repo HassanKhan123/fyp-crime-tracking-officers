@@ -52,39 +52,40 @@ class AuthScreen extends Component {
   }
 
   async componentDidMount() {
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user != null) {
-        fire
-          .firestore()
-          .collection('Users')
-          .doc(user.uid)
-          .get()
-          .then((user) => {
-            console.log('db==========', user.data());
-            let snapShot = user.data();
-            this.props.navigation.navigate('CrimeInfo', {
-              userId: snapShot.UserId,
-              Name: snapShot.userName,
-              userProfile: snapShot.ProfileURL,
-              UserToken: snapShot.userToken,
-              deviceinfo: snapShot.deviceInfo,
+    try {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user != null) {
+          fire
+            .firestore()
+            .collection('Officers')
+            .doc(user.uid)
+            .get()
+            .then((user) => {
+              console.log('db==========', user.data());
+              let snapShot = user.data();
+              this.props.navigation.navigate('CrimeInfo', {
+                userId: snapShot.UserId,
+                Name: snapShot.userName,
+                userProfile: snapShot.ProfileURL,
+                UserToken: snapShot.userToken,
+                deviceinfo: snapShot.deviceInfo,
+              });
+              this.setState({ loading: false });
             });
-            this.setState({ loading: false });
-          });
-      } else {
-        this.setState({ loading: false });
-      }
-    });
+        } else {
+          this.setState({ loading: false });
+        }
+      });
+    } catch (error) {
+      console.log(error);
+      this.setState({ loading: false });
+    }
 
     await Font.loadAsync({
       ralewayRegular: require('../assets/fonts/Raleway-Regular.ttf'),
     });
 
     this.setState({ fontLoaded: true });
-  }
-  loginAsOfficer() {
-    console.log('officer');
-    this.props.navigation.navigate('Officer');
   }
   async loginWithFacebook() {
     this.setState({ loading: true });
@@ -103,8 +104,6 @@ class AuthScreen extends Component {
           `https://graph.facebook.com/me?access_token=${token}&fields=id,name,picture.type(large)`
         );
         const userInfo = await response.json();
-        console.log('info=======', userInfo);
-
         firebase
           .auth()
           .signInWithCredential(credential)
@@ -116,7 +115,7 @@ class AuthScreen extends Component {
             const deviceInfo = Constants.deviceName;
             fire
               .firestore()
-              .collection('Users')
+              .collection('Officers')
               .doc(UserUid)
               .set({
                 userName,

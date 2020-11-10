@@ -262,9 +262,6 @@ class HomeScreen extends Component {
     };
     this._getLocationAsync = this._getLocationAsync.bind(this);
     this.onMapRegionChange = this.onMapRegionChange.bind(this);
-    this._onLongPressButton = this._onLongPressButton.bind(this);
-
-    this.sendNotification = this.sendNotification.bind(this);
   }
 
   // _showModal = () => this.setState({ visible: true });
@@ -301,7 +298,7 @@ class HomeScreen extends Component {
     //('toooken****', token)
     fire
       .firestore()
-      .collection('Users')
+      .collection('Officers')
       .doc(this.state.UserId)
       .set(
         {
@@ -325,11 +322,6 @@ class HomeScreen extends Component {
   };
   async componentDidMount() {
     this.animation.play();
-    setTimeout(() => {
-      this.setState({
-        visible: !this.state.visible,
-      });
-    }, 5000);
 
     if (Platform.OS === 'android' && !Constants.isDevice) {
       this.setState({
@@ -337,7 +329,8 @@ class HomeScreen extends Component {
           'Oops, this will not work on Sketch in an Android emulator. Try it on your device!',
       });
     } else {
-      this._getLocationAsync();
+      await this._getLocationAsync();
+      this.showCrimeMarkers();
     }
 
     await Font.loadAsync({
@@ -396,6 +389,8 @@ class HomeScreen extends Component {
       marker_lat: location.coords.latitude,
       marker_long: location.coords.longitude,
       regionName,
+
+      visible: !this.state.visible,
     });
 
     this.locationPosition = await Location.watchPositionAsync(
@@ -430,76 +425,6 @@ class HomeScreen extends Component {
     });
   };
 
-  sendNotification(regionName) {
-    console.log(regionName);
-    // <ScreenChild navigation={this.props.navigation} />
-
-    const { userName, UserId, ProfileURL, UserToken } = this.state;
-
-    let TokenArr = [];
-    let locationcoords = [];
-    let locationName;
-    let locationcity;
-    let locationStreet;
-    let locationcountry;
-    let locationregion;
-
-    fire
-      .firestore()
-      .collection('ExpoNotifyTokens')
-      .get()
-      .then((data) => {
-        data.docs.forEach((d) => {
-          let tokenData = d.data();
-          for (var key in tokenData) {
-            TokenArr.push(tokenData[key]);
-          }
-        });
-      })
-      .then(() => {
-        for (let i = 0; i < TokenArr.length; i++) {
-          fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: TokenArr[i],
-              body:
-                'Criminal activity happened at - ' +
-                ' ' +
-                `${regionName[0].street || regionName[0].name}` +
-                ', ' +
-                regionName[0].city,
-              sound: 'default',
-            }),
-          });
-        }
-        Alert.alert(
-          'Notification Generated..',
-          'Do you want to put some details now?',
-          [
-            { text: 'NOW', onPress: this.goToCrimeInfo },
-
-            { text: 'LATER', onPress: this.showCrimeMarkers },
-          ],
-          { cancelable: false }
-        );
-      });
-  }
-  goToCrimeInfo = () => {
-    this.props.navigation.navigate('crimeInfo', {
-      userId: this.state.UserId,
-      Name: this.state.userName,
-      userProfile: this.state.ProfileURL,
-      UserToken: this.state.UserToken,
-      deviceinfo: this.state.deviceInfo,
-      userkey: this.state.userKey,
-      allKey: this.state.allKey,
-    });
-    //('crimeinfoo----->')
-  };
   showCrimeMarkers = () => {
     let AlertArr = [];
     let placemarkers = [];
@@ -523,8 +448,6 @@ class HomeScreen extends Component {
             placemarkers.push(coordinates);
           }
         });
-      })
-      .then(() => {
         this.setState({
           markers: AlertArr,
           placemarkers,
@@ -533,74 +456,9 @@ class HomeScreen extends Component {
       });
   };
 
-  _onLongPressButton() {
-    let userkey;
-    let allkey;
-    const {
-      marker_lat,
-      marker_long,
-      regionName,
-      expoToken,
-      userName,
-      UserId,
-      ProfileURL,
-      UserToken,
-    } = this.state;
-
-    const userRobNotification = {
-      userName,
-      UserId,
-      ProfileURL,
-      UserToken,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      location: {
-        marker_lat,
-        marker_long,
-        regionName,
-      },
-      description: '',
-      comments: [],
-      acknowledged: {
-        acknowledgedStatus: false,
-        acknowledgedById: '',
-        acknowledgedByName: '',
-      },
-    };
-
-    fire
-      .firestore()
-      .collection('usersAlerts')
-      .doc(UserId)
-      .collection('userAlerts')
-      .add(userRobNotification)
-      .then((res) => {
-        fire
-          .firestore()
-          .collection('allAlerts')
-          .doc(res.id)
-          .set(userRobNotification)
-          .then((response) => {
-            // allkey = response.key
-
-            //("Rob information has been created");
-            this.setState({ userKey: res.id });
-            this.sendNotification(regionName);
-          });
-      })
-      .catch((e) => {
-        var errorMessage = e.message;
-        //(errorMessage);
-        console.log(errorMessage);
-      });
-  }
-
   // toggleModal = () => {
   //     this.setState({ isModalVisible: !this.state.isModalVisible });
   //   };
-
-  toBack = () => {
-    this.setState({ markers: '', isModalVisible: true });
-  };
 
   render() {
     const { visible } = this.state;
@@ -748,276 +606,9 @@ class HomeScreen extends Component {
                 )}
 
                 {!this.state.isModalVisible && (
-                  <View style={{ position: 'absolute', top: 10, left: 10 }}>
-                    <TouchableOpacity
-                      style={{ flexDirection: 'row' }}
-                      onPress={this.toBack}
-                    >
-                      <Ionicons name='ios-arrow-back' size={22} color='white' />
-                      <Text
-                        style={{
-                          fontFamily: 'ralewayRegular',
-                          fontSize: 14,
-                          color: 'white',
-                          paddingLeft: 7,
-                          paddingTop: 4,
-                        }}
-                      >
-                        Back
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                {/* this.state.isModalVisible && <View style={{ position: 'absolute', top: 28, left: 27, width: '85%' }}>
-                                <GooglePlacesAutocomplete
-                                    placeholder='Search Location...'
-                                    minLength={2}
-                                    autoFocus={false}
-                                    returnKeyType={'default'}
-                                    fetchDetails={true}
-                                    listViewDisplayed={false}
-                                    returnKeyType={'search'}
-                                    query={{
-                                        // available options: https://developers.google.com/places/web-service/autocomplete
-
-                                        key: 'AIzaSyAGF8cAOPFPIKCZYqxuibF9xx5XD4JBb84',
-                                        // key: 'AIzaSyBVFhY3cURPTbAoOnkyAeijkAt2kqRJ2iY',
-                                        language: 'en', // language of the results type: '(cities,regions)'
-                                        types: '',
-                                        components: 'country:pk'
-                                        // default: 'geocode'
-                                    }}
-
-                                    onPress={async (data, details) => { // 'details' is provided when fetchDetails = true
-                                        this.locationPosition.remove();
-                                        // //('data--->', data)
-                                        // //('Details--->', details.address_components[0].short_name)
-                                        let regionName = await Location.reverseGeocodeAsync({ longitude: details.geometry.location.lng, latitude: details.geometry.location.lat, });
-                                        regionName[0].street = details.address_components[0].short_name;
-                                        this.setState({
-                                            marker_lat: details.geometry.location.lat,
-                                            marker_long: details.geometry.location.lng,
-                                            regionName,
-
-                                            region: {
-                                                latitude: details.geometry.location.lat,
-                                                longitude: details.geometry.location.lng,
-                                                latitudeDelta: 0.0922,
-                                                longitudeDelta: 0.0922 * ASPECT_RATIO
-                                            }
-                                        });
-                                    }}
-                                    getDefaultValue={() => ''}
-
-                                    styles={{
-                                        textInputContainer: {
-                                            borderTopWidth: 0,
-                                            borderBottomWidth: 0,
-                                            paddingLeft: 20,
-                                            backgroundColor: '#2d3441',
-                                            paddingTop: 0,
-                                            elevation: 1,
-                                            color: 'white',
-                                            height: 50,
-                                            fontFamily: 'ralewayRegular'
-
-                                        },
-                                        textInput: {
-                                            marginLeft: 0,
-                                            marginRight: 0,
-                                            borderRadius: 0,
-                                            height: 40,
-                                            color: '#fff',
-                                            fontSize: 16,
-                                            paddingLeft: 10,
-                                            paddingRight: 5,
-                                            paddingBottom: 10,
-
-                                            backgroundColor: 'transparent',
-                                            fontFamily: 'ralewayRegular'
-                                        },
-                                        listView: {
-                                            // This right here - remove the margin top and click on the first result, that will work.
-                                            elevation: 1,
-                                            lineHeight: 2,
-                                            paddingTop: 1,
-                                            paddingBottom: 1,
-                                            backgroundColor: '#2d3441BF',
-                                            fontFamily: 'ralewayRegular',
-
-                                            color: 'white',
-                                            // and the absolute position.
-
-                                        },
-                                        description: {
-                                            color: "white",
-                                            borderTopWidth: 0,
-                                            borderBottomWidth: 0,
-
-                                        },
-                                        predefinedPlacesDescription: {
-                                            color: 'white'
-                                        },
-                                    }}
-
-
-                                    currentLocation={false} // Will add a 'Current location' button at the top of the predefined places list
-                                    currentLocationLabel="Current location"
-                                    nearbyPlacesAPI="GooglePlacesSearch" // Which API to use: GoogleReverseGeocoding or GooglePlacesSearch
-                                    filterReverseGeocodingByTypes={[
-                                        'locality',
-                                        'sublocality',
-                                        // 'administrative_area_level_1',
-
-                                    ]} // filter the reverse geocoding results by types - ['locality', 'administrative_area_level_3'] if you want to display only cities
-
-                                    debounce={200}
-                                    renderLeftButton={() => <MaterialIcons style={{ paddingTop: 15 }} name="my-location" size={20} color="white" />}
-                                />
-
-                                </View> */}
-                {this.state.isModalVisible && (
                   <View
-                    style={{
-                      position: 'absolute',
-                      bottom: 26,
-                      left: 27,
-                      width: '85%',
-                      backgroundColor: '#333846',
-                      padding: 18,
-                      elevation: 1,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row' }}>
-                      <View style={{ flex: 1 }}>
-                        <Text>
-                          <Entypo name='direction' size={40} color='#d98e3c' />
-                        </Text>
-                      </View>
-                      {this.state.regionName.length > 0 && (
-                        <View style={{ flex: 5, fontFamily: 'ralewayRegular' }}>
-                          {this.state.regionName &&
-                          this.state.regionName.length > 0 &&
-                          this.state.regionName[0] !== undefined &&
-                          this.state.regionName[0].street ? (
-                            <Text
-                              style={{
-                                color: 'white',
-                                letterSpacing: 1,
-                                paddingBottom: 4,
-                                fontFamily: 'ralewayRegular',
-                                fontSize: 16,
-                                textTransform: 'capitalize',
-                              }}
-                            >
-                              {this.state.regionName[0].street}
-                            </Text>
-                          ) : (
-                            <Text
-                              style={{
-                                color: 'white',
-                                letterSpacing: 1,
-                                paddingBottom: 4,
-                                fontFamily: 'ralewayRegular',
-                                fontSize: 16,
-                                textTransform: 'capitalize',
-                              }}
-                            >
-                              {this.state.regionName[0].name &&
-                                this.state.regionName[0].name}
-                            </Text>
-                          )}
-
-                          <Text
-                            style={{
-                              color: '#5d616f',
-                              letterSpacing: 1,
-                              paddingBottom: 4,
-                              fontFamily: 'ralewayRegular',
-                              fontSize: 16,
-                              textTransform: 'capitalize',
-                            }}
-                          >
-                            {this.state.regionName &&
-                              this.state.regionName.length > 0 &&
-                              this.state.regionName[0].city +
-                                ',' +
-                                this.state.regionName[0].country}
-                          </Text>
-                          <Text
-                            style={{
-                              color: '#5d616f',
-                              letterSpacing: 1,
-                              fontFamily: 'ralewayRegular',
-                              fontSize: 16,
-                              textTransform: 'capitalize',
-                            }}
-                          >
-                            {this.state.regionName &&
-                              this.state.regionName.length > 0 &&
-                              this.state.regionName[0].region + ','}
-                          </Text>
-                          {/* <Text style={{color:'#5d616f',letterSpacing : 1, fontFamily: 'ralewayRegular' , fontSize : 14 , textTransform: 'capitalize'}}>latitude: {this.state.marker_lat}</Text>
-                                    <Text style={{color:'#5d616f',letterSpacing : 1, fontFamily: 'ralewayRegular' , fontSize : 14 , textTransform: 'capitalize'}}>longitude: {this.state.marker_long}</Text> */}
-                          <Text
-                            style={{
-                              color: '#5d616f',
-                              letterSpacing: 1,
-                              fontFamily: 'ralewayRegular',
-                              fontSize: 14,
-                              textTransform: 'capitalize',
-                            }}
-                          >
-                            Coords: {this.state.marker_lat},{' '}
-                            {this.state.marker_long}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    <View
-                      style={{
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        alignItems: 'center',
-                        flexDirection: 'column',
-                        paddingTop: 8,
-                        width: '100%',
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={{
-                          borderColor: '#5d616f',
-                          borderWidth: 1,
-                          color: 'white',
-                          paddingTop: 10,
-                          paddingBottom: 10,
-                          paddingLeft: 18,
-                          paddingRight: 18,
-                          alignItems: 'center',
-                          textAlign: 'center',
-                        }}
-                        onPress={this.handleButtonPress}
-                        onLongPress={this._onLongPressButton}
-                      >
-                        <Text
-                          style={{
-                            color: 'white',
-                            fontFamily: 'ralewayRegular',
-                            fontSize: 16,
-                            letterSpacing: 1.2,
-                          }}
-                        >
-                          {' '}
-                          Robbed{' '}
-                          <Feather
-                            name='alert-triangle'
-                            size={20}
-                            color='white'
-                          />
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                    style={{ position: 'absolute', top: 10, left: 10 }}
+                  ></View>
                 )}
               </View>
             </SafeAreaView>

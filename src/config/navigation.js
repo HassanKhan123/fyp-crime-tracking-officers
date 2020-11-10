@@ -19,17 +19,7 @@ import firebase from 'firebase/app';
 
 import HomeScreen from '../screens/Home';
 import AuthScreen from '../screens/Auth';
-import CrimeInfoScreen from '../screens/Crimeinfo';
-import UserDevices from '../screens/myDevices';
 import AllRobHistories from '../screens/allRobHistory';
-import UserRobHistory from '../screens/userRobHistory';
-import chatScreen from '../screens/chatScreen';
-
-// const AuthNavigator = createStackNavigator(
-//     {
-//         Auth : AuthScreen
-//     }
-// );
 
 const logoutHandler = async (props) => {
   try {
@@ -106,21 +96,9 @@ const CustomDrawerContentComponent = (props) => (
 const MyDrawerNavigator = createDrawerNavigator(
   {
     Home: { screen: HomeScreen },
-    crimeInfo: {
-      screen: CrimeInfoScreen,
-    },
     AllRobHistories: {
       screen: AllRobHistories,
     },
-    UserRobHistory: {
-      screen: UserRobHistory,
-    },
-    chatScreen: {
-      screen: chatScreen,
-    },
-    // Devices: {
-    //     screen: UserDevices
-    // },
   },
   {
     contentOptions: {
@@ -207,46 +185,7 @@ const HomeNavigation = createStackNavigator(
     cardStyle: { backgroundColor: '#333846' },
     transitionConfig: TransitionConfiguration,
   }
-
-  // {
-  //     defaultNavigationOptions: ({ navigation }) => {
-  //       return {
-  //         headerTitle: (<View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', paddingBottom: 16 }}>
-  //             <Text style={{paddingTop : 6}}><MaterialIcons name="my-location" size={28} color="white" /></Text>
-  //            <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white', letterSpacing: 1.2, fontFamily: 'ralewayRegular', paddingTop : 8 , }}>CITIZEN</Text></View>),
-  //         headerTitleStyle: { flex: 1, textAlign: 'center', paddingBottom: 6,},
-  //         headerLayoutPreset: 'center',
-  //         headerLeft: (
-  //           <TouchableOpacity
-  //             onPress={() => navigation.toggleDrawer()}
-  //             style={{
-  //               left: Dimensions.get('window').height < 667 ? '8%' : '3%',
-  //               // backgroundColor: 'red',
-  //               width: '100%',
-  //               marginLeft: 10,
-  //               paddingBottom: 10
-  //             }}>
-  //             <Image
-  //               style={{ width: 25, height: 25 }}
-  //               source={require('../assets/images/toggle.png')}
-  //               tintColor='white'
-  //             />
-  //           </TouchableOpacity>
-  //         ),
-  //         headerRight: <View style={{ height: 50, width: 50 }}></View>,
-  //         headerStyle: { height: 30,backgroundColor : '#333846' },
-  //       };
-  //     }
-  //   },
 );
-
-// const AppNavigator = createSwitchNavigator(
-//     {
-//         Home: HomeNavigation,
-//         Auth: AuthScreen,
-//     },
-
-//   );
 
 const styles = StyleSheet.create({
   drawerImage: {
