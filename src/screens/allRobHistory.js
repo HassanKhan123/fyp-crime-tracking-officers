@@ -31,12 +31,15 @@ import {
 } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import * as Font from 'expo-font';
-import fire from '../config/firebase';
+import * as firebase from 'firebase';
 import { Dimensions } from 'react-native';
 import Modal from 'react-native-modal';
 import MapView, { Marker } from 'react-native-maps';
 import moment from 'moment';
 import { NavigationEvents } from 'react-navigation';
+
+import fire from '../config/firebase';
+
 const mapStyle = [
   {
     elementType: 'geometry',
@@ -225,85 +228,162 @@ class allRobHistory extends Component {
       infoArray: [],
       modalVisible: false,
       loading: true,
+      officerName: '',
+      officerID: '',
     };
   }
   fetchData() {
-    let infoArray = [];
-    fire
-      .firestore()
-      .collection('allAlerts')
-      .get()
-      .then((data) => {
-        data.forEach((d) => {
-          let snapShot = d.data();
+    console.log('fetch run');
+    // let infoArray = [];
+    // this.setState({ infoArray: [] });
+    // fire
+    //   .firestore()
+    //   .collection('allAlerts')
+    //   .onSnapshot((snap) => {
+    //     snap.forEach((doc) => {
+    //       console.log(doc.id);
+    //       let snapShot = doc.data();
 
-          let userkey = d.id;
+    //       let userkey = doc.id;
 
-          let ProfileURL = snapShot.ProfileURL;
-          let userName = snapShot.userName;
-          let createdAt = snapShot.createdAt.toDate();
-          let userId = snapShot.UserId;
-          //('createdAt', createdAt)
-          // let event = new Date(createdAt);
-          // let date = event.toLocaleDateString('en-US', {
-          //   timeZone: 'GMT',
-          //   hour12: true,
-          // });
-          let time = moment(createdAt).format('MMMM Do YYYY, h:mm A');
+    //       let ProfileURL = snapShot.ProfileURL;
+    //       let userName = snapShot.userName;
+    //       let createdAt = snapShot.createdAt.toDate();
+    //       let userId = snapShot.UserId;
+    //       let time = moment(createdAt).format('MMMM Do YYYY, h:mm A');
+    //       let time2 = moment(createdAt).format('MMM D, YYYY, h:mm A');
 
-          let description = snapShot.ReportDesc;
-          let street, city, marker_lat, marker_long, name;
-          if (snapShot.location) {
-            street = snapShot.location.regionName[0].street;
-            city = snapShot.location.regionName[0].city;
-            name = snapShot.location.regionName[0].name;
-            marker_lat = snapShot.location.marker_lat;
-            marker_long = snapShot.location.marker_long;
-          }
-          let region = {
-            latitude: marker_lat,
-            longitude: marker_long,
-            latitudeDelta: 0.03,
-            longitudeDelta: 0.02,
-          };
-          let crimeDetail = {
-            street,
-            city,
-            name,
-            ProfileURL,
-            userName,
-            time,
+    //       let description = snapShot.ReportDesc;
+    //       let acknowledgedData = snapShot.acknowledged;
+    //       let street, city, marker_lat, marker_long, name;
+    //       if (snapShot.location) {
+    //         street = snapShot.location.regionName[0].street;
+    //         city = snapShot.location.regionName[0].city;
+    //         name = snapShot.location.regionName[0].name;
+    //         marker_lat = snapShot.location.marker_lat;
+    //         marker_long = snapShot.location.marker_long;
+    //       }
+    //       let region = {
+    //         latitude: marker_lat,
+    //         longitude: marker_long,
+    //         latitudeDelta: 0.03,
+    //         longitudeDelta: 0.02,
+    //       };
+    //       let crimeDetail = {
+    //         street,
+    //         city,
+    //         name,
+    //         ProfileURL,
+    //         userName,
+    //         time,
+    //         time2,
 
-            marker_lat,
-            marker_long,
-            region,
-            userkey,
-            description,
+    //         marker_lat,
+    //         marker_long,
+    //         region,
+    //         userkey,
+    //         description,
 
-            userId,
-          };
-          infoArray.push(crimeDetail);
-          this.setState({ infoArray, loading: false });
-        });
-      });
-  }
-
-  componentWillUnmount() {
-    this.willFocusSubscription.remove();
+    //         userId,
+    //         acknowledgedData,
+    //       };
+    //       infoArray.push(crimeDetail);
+    //       this.setState({ infoArray, loading: false });
+    //     });
+    //     console.log('s====', infoArray.length);
+    //   });
   }
 
   async componentDidMount() {
-    await Font.loadAsync({
-      ralewayRegular: require('../assets/fonts/Raleway-Regular.ttf'),
-    });
-    this.fetchData();
-    this.willFocusSubscription = this.props.navigation.addListener(
-      'willFocus',
-      () => {
-        this.fetchData();
-      }
-    );
-    this.setState({ fontLoaded: true });
+    try {
+      await Font.loadAsync({
+        ralewayRegular: require('../assets/fonts/Raleway-Regular.ttf'),
+      });
+      // this.setState({ infoArray: [] }, () => {
+      //   this.fetchData();
+      // });
+
+      this.setState({ infoArray: [] });
+      fire
+        .firestore()
+        .collection('allAlerts')
+        .onSnapshot((snap) => {
+          let infoArray = [];
+          snap.forEach((doc) => {
+            // console.log(doc.id);
+            let snapShot = doc.data();
+
+            let userkey = doc.id;
+
+            let ProfileURL = snapShot.ProfileURL;
+            let userName = snapShot.userName;
+            let createdAt = snapShot.createdAt.toDate();
+            let userId = snapShot.UserId;
+            let time = moment(createdAt).format('MMMM Do YYYY, h:mm A');
+            let time2 = moment(createdAt).format('MMM D, YYYY, h:mm A');
+
+            let description = snapShot.ReportDesc;
+            let acknowledgedData = snapShot.acknowledged;
+            let street, city, marker_lat, marker_long, name;
+            if (snapShot.location) {
+              street = snapShot.location.regionName[0].street;
+              city = snapShot.location.regionName[0].city;
+              name = snapShot.location.regionName[0].name;
+              marker_lat = snapShot.location.marker_lat;
+              marker_long = snapShot.location.marker_long;
+            }
+            let region = {
+              latitude: marker_lat,
+              longitude: marker_long,
+              latitudeDelta: 0.03,
+              longitudeDelta: 0.02,
+            };
+            let crimeDetail = {
+              street,
+              city,
+              name,
+              ProfileURL,
+              userName,
+              time,
+              time2,
+
+              marker_lat,
+              marker_long,
+              region,
+              userkey,
+              description,
+
+              userId,
+              acknowledgedData,
+            };
+            infoArray.push(crimeDetail);
+          });
+          this.setState({ infoArray, loading: false });
+          console.log('s====', infoArray.length);
+        });
+
+      this.setState({ fontLoaded: true });
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user != null) {
+          fire
+            .firestore()
+            .collection('Officers')
+            .doc(user.uid)
+            .get()
+            .then((user) => {
+              let snapShot = user.data();
+              this.setState({
+                officerName: snapShot.userName,
+                officerID: snapShot.UserId,
+              });
+            });
+        } else {
+          this.setState({ loading: false });
+        }
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   onMapLayout = () => {
@@ -332,12 +412,37 @@ class allRobHistory extends Component {
   modal = () => {
     this.setState({ modalVisible: true });
   };
+  acknowledgeCrime = async (postId) => {
+    const { officerName, officerID } = this.state;
+    console.log(postId, officerID, officerName);
+    try {
+      fire
+        .firestore()
+        .collection('allAlerts')
+        .doc(postId)
+        .set(
+          {
+            acknowledged: {
+              acknowledgedById: officerID,
+              acknowledgedByName: officerName,
+              acknowledgedStatus: true,
+              acknowledgedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+          },
+          { merge: true }
+        );
+      // this.setState({ infoArray: [] });
+      // this.fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   render() {
     // //('infoArray---->', this.state.infoArray)
     //('render==========>')
-    const { limit, loading } = this.state;
-    const temp = [...this.state.infoArray];
+    const { limit, loading, infoArray } = this.state;
+    // const temp = [...this.state.infoArray];
 
     // //('List============================', temp.length)
     // temp.length = limit;
@@ -398,8 +503,8 @@ class allRobHistory extends Component {
               contentContainerStyle={{ paddingBottom: 30 }}
               showsVerticalScrollIndicator={true}
             >
-              {temp.map((mark, index) => (
-                <View style={styles.card} key={mark.userkey}>
+              {infoArray.map((mark, index) => (
+                <View style={styles.card} key={index}>
                   <View style={{ padding: 10, flexDirection: 'row' }}>
                     <View>
                       <Image
@@ -516,6 +621,43 @@ class allRobHistory extends Component {
                         />
                       )}
                     </MapView>
+                  </View>
+                  <View
+                    style={{
+                      padding: 10,
+                      paddingTop: 15,
+                      paddingBottom: 15,
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    {mark.acknowledgedData.acknowledgedStatus ? (
+                      <TouchableOpacity
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'space-between',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Text>
+                          Acknowledged By{' '}
+                          {mark.acknowledgedData.acknowledgedByName}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Button
+                        dark
+                        style={{
+                          padding: 20,
+                          borderRadius: 10,
+                        }}
+                        onPress={() => this.acknowledgeCrime(mark.userkey)}
+                      >
+                        <Text style={{ color: 'white' }}>
+                          Acknowledged Now!
+                        </Text>
+                      </Button>
+                    )}
                   </View>
                 </View>
               ))}

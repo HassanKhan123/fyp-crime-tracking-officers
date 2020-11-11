@@ -321,6 +321,12 @@ class HomeScreen extends Component {
     this.setState({ expoToken: token });
   };
   async componentDidMount() {
+    const userName = this.props.navigation.state.params.Name;
+    const UserId = this.props.navigation.state.params.userId;
+    const ProfileURL = this.props.navigation.state.params.userProfile;
+    const UserToken = this.props.navigation.state.params.UserToken;
+    const deviceInfo = this.props.navigation.state.params.deviceinfo;
+
     this.animation.play();
 
     if (Platform.OS === 'android' && !Constants.isDevice) {
@@ -329,28 +335,13 @@ class HomeScreen extends Component {
           'Oops, this will not work on Sketch in an Android emulator. Try it on your device!',
       });
     } else {
-      await this._getLocationAsync();
+      await this._getLocationAsync(UserId);
       this.showCrimeMarkers();
     }
 
     await Font.loadAsync({
       ralewayRegular: require('../assets/fonts/Raleway-Regular.ttf'),
     });
-    console.log(
-      'aaa=========',
-      this.props.navigation.state.params.Name,
-      this.props.navigation.state.params.userId,
-      this.props.navigation.state.params.userProfile,
-      this.props.navigation.state.params.UserToken,
-      this.props.navigation.state.params.deviceinfo
-    );
-    const userName = this.props.navigation.state.params.Name;
-    const UserId = this.props.navigation.state.params.userId;
-    const ProfileURL = this.props.navigation.state.params.userProfile;
-    const UserToken = this.props.navigation.state.params.UserToken;
-    const deviceInfo = this.props.navigation.state.params.deviceinfo;
-
-    console.log('===', UserId, userName, UserToken, deviceInfo);
 
     this.setState({
       fontLoaded: true,
@@ -363,45 +354,67 @@ class HomeScreen extends Component {
     await this.registerForPushNotificationAsync();
   }
 
-  _getLocationAsync = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status !== 'granted') {
-      this.setState({
-        errorMessage: 'Permission to access location was denied',
-      });
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-    const region = {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0922 * ASPECT_RATIO,
-    };
-    let regionName = await Location.reverseGeocodeAsync({
-      longitude: location.coords.longitude,
-      latitude: location.coords.latitude,
-    });
-
-    this.setState({
-      location,
-      region,
-      marker_lat: location.coords.latitude,
-      marker_long: location.coords.longitude,
-      regionName,
-
-      visible: !this.state.visible,
-    });
-
-    this.locationPosition = await Location.watchPositionAsync(
-      { timeInterval: 1000, distanceInterval: 0.1 },
-      (loc) => {
+  _getLocationAsync = async (id) => {
+    try {
+      let { status } = await Permissions.askAsync(Permissions.LOCATION);
+      if (status !== 'granted') {
         this.setState({
-          marker_long: loc.coords.longitude,
-          marker_lat: loc.coords.latitude,
+          errorMessage: 'Permission to access location was denied',
         });
       }
-    );
+
+      let location = await Location.getCurrentPositionAsync({});
+      const region = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0922 * ASPECT_RATIO,
+      };
+      let regionName = await Location.reverseGeocodeAsync({
+        longitude: location.coords.longitude,
+        latitude: location.coords.latitude,
+      });
+
+      this.setState(
+        {
+          location,
+          region,
+          marker_lat: location.coords.latitude,
+          marker_long: location.coords.longitude,
+          regionName,
+
+          visible: !this.state.visible,
+        },
+        async () => {
+          fire
+            .firestore()
+            .collection('Officers')
+            .doc(id)
+            .set(
+              {
+                location: {
+                  marker_lat: region.latitude,
+                  marker_long: region.longitude,
+                  regionName,
+                },
+              },
+              { merge: true }
+            );
+        }
+      );
+
+      this.locationPosition = await Location.watchPositionAsync(
+        { timeInterval: 1000, distanceInterval: 0.1 },
+        (loc) => {
+          this.setState({
+            marker_long: loc.coords.longitude,
+            marker_lat: loc.coords.latitude,
+          });
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   onMapRegionChange(region) {
