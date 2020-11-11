@@ -404,12 +404,29 @@ class HomeScreen extends Component {
       );
 
       this.locationPosition = await Location.watchPositionAsync(
-        { timeInterval: 1000, distanceInterval: 0.1 },
+        { timeInterval: 50000, distanceInterval: 0.05 },
         (loc) => {
-          this.setState({
-            marker_long: loc.coords.longitude,
-            marker_lat: loc.coords.latitude,
-          });
+          this.setState(
+            {
+              marker_long: loc.coords.longitude,
+              marker_lat: loc.coords.latitude,
+            },
+            async () => {
+              await fire
+                .firestore()
+                .collection('Officers')
+                .doc(id)
+                .set(
+                  {
+                    location: {
+                      marker_lat: loc.coords.latitude,
+                      marker_long: loc.coords.longitude,
+                    },
+                  },
+                  { merge: true }
+                );
+            }
+          );
         }
       );
     } catch (error) {
