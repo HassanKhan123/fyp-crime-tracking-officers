@@ -110,7 +110,7 @@ class AuthScreen extends Component {
           .then((res) => {
             const userName = res.additionalUserInfo.profile.name;
             const UserUid = res.user.uid;
-            const ProfileURL = `${res.user.photoURL}?type=large`;
+            const ProfileURL = res.additionalUserInfo.profile.picture.data.url;
 
             const deviceInfo = Constants.deviceName;
             fire

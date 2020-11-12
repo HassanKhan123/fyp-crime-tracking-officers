@@ -3,7 +3,7 @@
     "name": "CITIZEN",
     "slug": "Citizen",
     "privacy": "public",
-    "icon":"./assets/icon_new.png",
+    "icon":"./assets/police.png",
     "sdkVersion": "37.0.0",
     "platforms": [
       "ios",
